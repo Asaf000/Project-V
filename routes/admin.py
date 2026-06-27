@@ -501,3 +501,265 @@ def delete_category(id):
         )
 
     )
+    # ==========================================================
+# Manage Orders
+# ==========================================================
+
+@admin_bp.route("/orders")
+@login_required
+def orders():
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    orders = (
+        Order.query
+        .order_by(Order.order_date.desc())
+        .all()
+    )
+
+    return render_template(
+        "admin_orders.html",
+        orders=orders
+    )
+
+
+# ==========================================================
+# Order Details
+# ==========================================================
+
+@admin_bp.route("/order/<int:id>")
+@login_required
+def order_details(id):
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    order = Order.query.get_or_404(id)
+
+    return render_template(
+        "admin_order_details.html",
+        order=order
+    )
+
+
+# ==========================================================
+# Update Order Status
+# ==========================================================
+
+@admin_bp.route(
+    "/order/status/<int:id>",
+    methods=["POST"]
+)
+@login_required
+def update_order_status(id):
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    order = Order.query.get_or_404(id)
+
+    status = request.form.get("status")
+
+    allowed = [
+        "Pending",
+        "Confirmed",
+        "Packed",
+        "Shipped",
+        "Out for Delivery",
+        "Delivered",
+        "Cancelled"
+    ]
+
+    if status in allowed:
+
+        order.status = status
+
+        db.session.commit()
+
+        flash(
+            "Order status updated successfully.",
+            "success"
+        )
+
+    else:
+
+        flash(
+            "Invalid status selected.",
+            "danger"
+        )
+
+    return redirect(
+        url_for(
+            "admin.order_details",
+            id=id
+        )
+    )
+
+
+# ==========================================================
+# Users
+# ==========================================================
+
+@admin_bp.route("/users")
+@login_required
+def users():
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    users = (
+        User.query
+        .order_by(User.created_at.desc())
+        .all()
+    )
+
+    return render_template(
+        "users.html",
+        users=users
+    )
+
+
+# ==========================================================
+# Dashboard Analytics
+# ==========================================================
+
+@admin_bp.route("/analytics")
+@login_required
+def analytics():
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    total_sales = (
+        db.session.query(
+            db.func.sum(Order.total_amount)
+        ).scalar() or 0
+    )
+
+    delivered = Order.query.filter_by(
+        status="Delivered"
+    ).count()
+
+    pending = Order.query.filter_by(
+        status="Pending"
+    ).count()
+
+    shipped = Order.query.filter_by(
+        status="Shipped"
+    ).count()
+
+    cancelled = Order.query.filter_by(
+        status="Cancelled"
+    ).count()
+
+    total_products = Product.query.count()
+
+    low_stock = Product.query.filter(
+        Product.stock <= 5
+    ).count()
+
+    return render_template(
+
+        "analytics.html",
+
+        total_sales=total_sales,
+
+        delivered=delivered,
+
+        pending=pending,
+
+        shipped=shipped,
+
+        cancelled=cancelled,
+
+        total_products=total_products,
+
+        low_stock=low_stock
+
+    )
+
+
+# ==========================================================
+# Inventory
+# ==========================================================
+
+@admin_bp.route("/inventory")
+@login_required
+def inventory():
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    products = (
+        Product.query
+        .order_by(Product.stock.asc())
+        .all()
+    )
+
+    return render_template(
+        "inventory.html",
+        products=products
+    )
+
+
+# ==========================================================
+# Delete Order
+# ==========================================================
+
+@admin_bp.route("/order/delete/<int:id>")
+@login_required
+def delete_order(id):
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    order = Order.query.get_or_404(id)
+
+    db.session.delete(order)
+
+    db.session.commit()
+
+    flash(
+        "Order deleted successfully.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin.orders")
+    )
+
+
+# ==========================================================
+# Admin Profile
+# ==========================================================
+
+@admin_bp.route("/profile")
+@login_required
+def profile():
+
+    if not admin_required():
+        return redirect(url_for("product.home"))
+
+    return render_template(
+        "admin_profile.html",
+        admin=current_user
+    )
+
+
+# ==========================================================
+# Admin Logout Shortcut
+# ==========================================================
+
+@admin_bp.route("/logout")
+@login_required
+def logout():
+
+    return redirect(
+        url_for("auth.logout")
+    )
+
+
+# ==========================================================
+# Admin Routes Completed
+# ==========================================================
