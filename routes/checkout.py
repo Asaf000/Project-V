@@ -105,3 +105,103 @@ def checkout():
         db.session.add(order)
 
         db.session.commit()
+                # =======================================
+        # Order Items
+        # =======================================
+
+        for item in cart_items:
+
+            order_item = OrderItem(
+
+                order_id=order.id,
+
+                product_id=item.product_id,
+
+                quantity=item.quantity,
+
+                price=item.product.price
+
+            )
+
+            db.session.add(order_item)
+
+            # Reduce Stock
+
+            item.product.stock -= item.quantity
+
+        # =======================================
+        # Clear Cart
+        # =======================================
+
+        Cart.query.filter_by(
+
+            user_id=current_user.id
+
+        ).delete()
+
+        db.session.commit()
+
+        flash(
+
+            "Order placed successfully.",
+
+            "success"
+
+        )
+
+        return redirect(
+
+            url_for(
+
+                "checkout.order_success",
+
+                order_id=order.id
+
+            )
+
+        )
+
+    return render_template(
+
+        "checkout.html",
+
+        cart_items=cart_items,
+
+        subtotal=subtotal,
+
+        shipping=shipping,
+
+        grand_total=grand_total
+
+    )
+
+
+# ==========================================================
+# Order Success
+# ==========================================================
+
+@checkout_bp.route(
+    "/order-success/<int:order_id>"
+)
+@login_required
+def order_success(order_id):
+
+    order = Order.query.get_or_404(
+        order_id
+    )
+
+    return render_template(
+
+        "order_success.html",
+
+        order=order
+
+    )
+
+
+# ==========================================================
+# Checkout Completed
+# ==========================================================
+
+
+
