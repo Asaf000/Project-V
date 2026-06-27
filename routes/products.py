@@ -153,3 +153,156 @@ def category_products(id):
         current_category=category
 
     )
+    # ==========================================================
+# Search Products
+# ==========================================================
+
+@product_bp.route("/search")
+def search():
+
+    keyword = request.args.get(
+
+        "q",
+
+        ""
+
+    ).strip()
+
+    page = request.args.get(
+
+        "page",
+
+        1,
+
+        type=int
+
+    )
+
+    if keyword:
+
+        products = Product.query.filter(
+
+            Product.name.ilike(
+
+                f"%{keyword}%"
+
+            )
+
+        ).paginate(
+
+            page=page,
+
+            per_page=12
+
+        )
+
+    else:
+
+        products = Product.query.paginate(
+
+            page=page,
+
+            per_page=12
+
+        )
+
+    categories = Category.query.all()
+
+    return render_template(
+
+        "products.html",
+
+        products=products,
+
+        categories=categories,
+
+        keyword=keyword
+
+    )
+
+
+# ==========================================================
+# Featured Products
+# ==========================================================
+
+@product_bp.route("/featured")
+def featured():
+
+    featured_products = (
+
+        Product.query
+
+        .order_by(Product.stock.desc())
+
+        .limit(10)
+
+        .all()
+
+    )
+
+    return render_template(
+
+        "featured_products.html",
+
+        products=featured_products
+
+    )
+
+
+# ==========================================================
+# Latest Products
+# ==========================================================
+
+@product_bp.route("/latest")
+def latest():
+
+    latest_products = (
+
+        Product.query
+
+        .order_by(
+
+            Product.created_at.desc()
+
+        )
+
+        .limit(20)
+
+        .all()
+
+    )
+
+    return render_template(
+
+        "latest_products.html",
+
+        products=latest_products
+
+    )
+
+
+# ==========================================================
+# Out Of Stock Products
+# ==========================================================
+
+@product_bp.route("/out-of-stock")
+def out_of_stock():
+
+    products = Product.query.filter(
+
+        Product.stock <= 0
+
+    ).all()
+
+    return render_template(
+
+        "out_of_stock.html",
+
+        products=products
+
+    )
+
+
+# ==========================================================
+# Products Route Completed
+# ==========================================================
